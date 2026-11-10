@@ -41,6 +41,24 @@ h2 { font-size: 1.05rem; font-weight: 650; }
 .drop-main { font-weight: 600; overflow-wrap: anywhere; }
 .drop-sub { color: var(--muted); font-size: 0.84rem; }
 
+.queue { display: flex; flex-direction: column; gap: 8px; }
+.queue-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.86rem; font-weight: 600; }
+.queue-hint { margin: 0; color: var(--muted); font-size: 0.82rem; }
+button.link { padding: 0; border: 0; background: none; color: var(--muted); font-size: 0.82rem; text-decoration: underline; }
+button.link:hover { color: var(--accent); }
+.queue-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; counter-reset: rec; }
+.queue-list li { counter-increment: rec; display: flex; align-items: center; gap: 10px; padding: 7px 8px 7px 6px; border: 1px solid var(--line); border-radius: 8px; background: var(--field); cursor: grab; user-select: none; }
+.queue-list li::before { content: counter(rec); flex: none; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: 0.75rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.queue-list li.dragging { opacity: .45; border-style: dashed; border-color: var(--accent); cursor: grabbing; }
+.grip { flex: none; color: var(--muted); font-size: 1rem; line-height: 1; letter-spacing: -2px; }
+.q-info { flex: 1; min-width: 0; }
+.q-name { font-weight: 600; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.q-size { color: var(--muted); font-size: 0.78rem; }
+.q-actions { display: flex; gap: 2px; flex: none; }
+.q-actions button { width: 28px; height: 28px; padding: 0; border: 1px solid transparent; background: none; color: var(--muted); font-size: 0.95rem; line-height: 1; }
+.q-actions button:hover:not(:disabled) { border-color: var(--line); color: var(--accent); }
+.q-actions button:disabled { opacity: .3; cursor: default; }
+
 .field { display: flex; flex-direction: column; gap: 5px; font-size: 0.86rem; font-weight: 600; min-width: 0; }
 .field em { font-style: normal; font-weight: 400; color: var(--muted); }
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }

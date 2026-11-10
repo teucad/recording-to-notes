@@ -18,12 +18,21 @@
   <main class="layout">
     <section class="col">
       <form class="card" id="jobForm">
-        <h2>New lecture</h2>
+        <h2>New session</h2>
         <label class="drop" id="drop">
-          <input type="file" id="file" accept="audio/*,video/*,.txt,.mkv,.opus,.flac,.m4a">
-          <span class="drop-main" id="dropMain">Drop a lecture recording here, or click to choose</span>
-          <span class="drop-sub" id="dropSub">Audio or video — or a .txt transcript to skip transcription</span>
+          <input type="file" id="file" multiple accept="audio/*,video/*,.txt,.mkv,.opus,.flac,.m4a">
+          <span class="drop-main" id="dropMain">Drop lecture recordings here, or click to choose</span>
+          <span class="drop-sub" id="dropSub">One or more audio/video files — or .txt transcripts to skip transcription</span>
         </label>
+
+        <div class="queue" id="queue" hidden>
+          <div class="queue-head">
+            <span id="queueCount"></span>
+            <button type="button" class="link" id="queueClear">Clear all</button>
+          </div>
+          <ol class="queue-list" id="queueList" aria-label="Recordings in processing order"></ol>
+          <p class="queue-hint" id="queueHint">Drag to set the order. The recordings are joined in this order into one chapter.</p>
+        </div>
 
         <label class="field">
           <span>Chapter title <em>optional — the model proposes one if left empty</em></span>
@@ -58,7 +67,7 @@
 
       <div class="card">
         <h2>Markdown → PDF</h2>
-        <p class="sub">Convert any Markdown file. It is copied to the output folder together with its PDF.</p>
+        <p class="sub">Convert any Markdown file. It is copied to its own folder in the output directory together with its PDF.</p>
         <label class="drop small" id="mdDrop">
           <input type="file" id="mdFile" accept=".md,.markdown">
           <span class="drop-main" id="mdDropMain">Drop a .md file here, or click to choose</span>
@@ -85,12 +94,12 @@
 
       <div class="card">
         <div class="card-head">
-          <h2>Output folder</h2>
+          <h2>Sessions</h2>
           <button type="button" class="ghost" id="openFolder">Open in Explorer</button>
         </div>
         <p class="sub" id="outPath"></p>
         <ul class="files" id="files"></ul>
-        <p class="empty" id="filesEmpty" hidden>Nothing here yet. Your Markdown and PDF files will appear in this list.</p>
+        <p class="empty" id="filesEmpty" hidden>Nothing here yet. Each session gets its own folder with its Markdown, PDF and transcript.</p>
       </div>
     </section>
   </main>

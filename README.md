@@ -8,11 +8,38 @@ A local web app that turns a recorded lecture into a textbook-style chapter.
    learning objectives, key takeaways, a glossary and review questions.
 3. **Export** — the chapter is saved as Markdown and rendered to a typeset PDF.
 
-Everything runs on your own machine; no audio or text leaves it. All results are written to `output/`
-(`output/<name>.md`, `output/<name>.pdf`, and the raw transcript in `output/transcripts/`).
+Everything runs on your own machine; no audio or text leaves it.
 
-The app also converts any other Markdown file to PDF: drop it on the **Markdown → PDF** card, or use
-**Convert to PDF** next to a file in the output list.
+## Sessions
+
+Every run is a **session** with its own folder:
+
+```
+output/<session>/
+    <session>.md      the textbook chapter
+    <session>.pdf     the typeset PDF
+    transcript.txt    the raw transcript, with timestamps
+```
+
+A session can contain **several recordings** (for example a lecture recorded in parts). Drop them all,
+then drag the rows in the list into the right order (or use the ↑ ↓ buttons). They are transcribed in
+that order and joined into one chapter.
+
+## Languages
+
+- **Auto-detect (per recording)** — each recording's language is detected separately, so a session can
+  mix recordings in different languages.
+- **Multilingual** — for recordings where the speaker switches language *within* the recording; the
+  language is detected for every segment.
+- Or pick one fixed spoken language.
+
+The notes are written in one language: by default the language spoken most in the session, or any
+language you choose under **Notes language**. Passages in other languages are translated.
+
+## Markdown → PDF
+
+The app also converts any other Markdown file to PDF: drop it on the **Markdown → PDF** card (it gets
+its own folder in `output/`), or use **Convert to PDF** next to a session in the list.
 
 ## Requirements
 
@@ -42,7 +69,7 @@ The app opens at <http://127.0.0.1:8765>. The first transcription downloads the 
 ## Notes
 
 - Supported input: mp3, wav, m4a, aac, flac, ogg, opus, wma, webm, mp4, mkv, mov — or a `.txt`
-  transcript, which skips transcription (useful for re-composing a saved transcript with another model).
+  transcript, which skips transcription (useful for re-composing a session's `transcript.txt` with another model).
 - Whisper is unloaded before composing so the language model gets the VRAM.
 - Choose **None — cleaned transcript only** as the writing model to skip the language model.
 - Environment variables: `PORT` (default 8765), `OLLAMA_URL` (default `http://127.0.0.1:11434`),

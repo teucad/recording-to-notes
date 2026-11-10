@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import time
 from datetime import date
 from typing import Callable
 
@@ -18,15 +19,23 @@ FINAL_BODY_WORDS = 4500
 LANG_NAMES = {
     "en": "English", "tr": "Turkish", "de": "German", "fr": "French", "es": "Spanish",
     "it": "Italian", "pt": "Portuguese", "nl": "Dutch", "ru": "Russian", "ar": "Arabic",
-    "zh": "Chinese", "ja": "Japanese", "ko": "Korean", "pl": "Polish", "uk": "Ukrainian",
-    "el": "Greek", "sv": "Swedish", "hi": "Hindi", "fa": "Persian", "az": "Azerbaijani",
+    "zh": "Chinese", "ja": "Japanese", "ko": "Korean", "hi": "Hindi", "pl": "Polish",
+    "uk": "Ukrainian", "el": "Greek", "sv": "Swedish", "da": "Danish", "no": "Norwegian",
+    "fi": "Finnish", "cs": "Czech", "sk": "Slovak", "hu": "Hungarian", "ro": "Romanian",
+    "bg": "Bulgarian", "sr": "Serbian", "hr": "Croatian", "bs": "Bosnian", "sl": "Slovenian",
+    "mk": "Macedonian", "sq": "Albanian", "lt": "Lithuanian", "lv": "Latvian", "et": "Estonian",
+    "ca": "Catalan", "gl": "Galician", "eu": "Basque", "he": "Hebrew", "fa": "Persian",
+    "ur": "Urdu", "az": "Azerbaijani", "kk": "Kazakh", "uz": "Uzbek", "hy": "Armenian",
+    "ka": "Georgian", "bn": "Bengali", "ta": "Tamil", "te": "Telugu", "mr": "Marathi",
+    "gu": "Gujarati", "pa": "Punjabi", "ne": "Nepali", "id": "Indonesian", "ms": "Malay",
+    "vi": "Vietnamese", "th": "Thai", "tl": "Filipino", "sw": "Swahili", "af": "Afrikaans",
 }
 
 SYSTEM = """You are an expert academic editor. You turn the raw transcript of a spoken lecture \
 into a chapter of a well-written textbook.
 
 Rules:
-- Write in {lang}.
+- Write the entire chapter in {lang}. The lecture may switch between languages; translate every passage that is in another language into {lang}. Where the lecturer uses an established technical term in another language, you may keep that original term in parentheses after its first use.
 - Keep every substantive idea, definition, argument, example, number and formula from the transcript. \
 Do not summarise away detail, and do not invent facts that the lecturer did not say.
 - Rewrite spoken language as clear, formal, flowing textbook prose. Remove filler words, repetitions, \
@@ -106,14 +115,17 @@ def _chat(model, system, user, num_ctx, on_chars, should_cancel) -> str:
         "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
         "options": {"num_ctx": num_ctx, "temperature": 0.3},
     }
-    for attempt in range(2):
+    retries = [5, 15, 30]  # seconds to wait when the connection drops (e.g. Ollama restarting)
+    drop_think = True
+    while True:
         parts: list[str] = []
         try:
             with httpx.stream("POST", f"{OLLAMA_URL}/api/chat", json=payload,
                               timeout=httpx.Timeout(None, connect=10)) as r:
                 if r.status_code >= 400:
                     detail = r.read().decode("utf-8", "replace")[:400]
-                    if attempt == 0 and "think" in detail.lower():
+                    if drop_think and "think" in detail.lower():
+                        drop_think = False
                         payload.pop("think", None)  # model without a thinking mode
                         continue
                     raise ComposeError(f"Ollama returned {r.status_code}: {detail}")
@@ -130,12 +142,18 @@ def _chat(model, system, user, num_ctx, on_chars, should_cancel) -> str:
                         parts.append(piece)
                         on_chars(sum(map(len, parts)))
         except httpx.HTTPError as exc:
+            if retries:
+                wait = retries.pop(0)
+                for _ in range(wait):
+                    if should_cancel():
+                        raise InterruptedError
+                    time.sleep(1)
+                continue
             raise ComposeError(
                 f"Could not reach Ollama at {OLLAMA_URL} ({exc.__class__.__name__}). "
                 "Start Ollama and try again."
             ) from exc
         return "".join(parts)
-    raise ComposeError("Ollama request failed.")
 
 
 def _clean(text: str) -> str:

@@ -101,6 +101,7 @@ def transcribe(
     path: Path,
     model_name: str,
     language: str | None,
+    multilingual: bool,
     on_progress: Callable[[float, str], None],
     should_cancel: Callable[[], bool],
     log: Callable[[str], None],
@@ -114,12 +115,14 @@ def transcribe(
     pipeline = BatchedInferencePipeline(model=model)
     seg_iter, info = pipeline.transcribe(
         str(path),
-        language=language or None,
+        language=None if multilingual else (language or None),
+        multilingual=multilingual,  # detect the language of every segment (mixed-language speech)
         batch_size=16 if device == "cuda" else 4,
         vad_filter=True,
     )
     duration = max(info.duration or 0.0, 0.001)
-    log(f"Audio length {_stamp(duration)}, language: {info.language}.")
+    lang_note = f"multilingual, mainly {info.language}" if multilingual else f"language: {info.language}"
+    log(f"Audio length {_stamp(duration)}, {lang_note}.")
 
     segments: list[dict] = []
     for seg in seg_iter:
@@ -144,7 +147,10 @@ def paragraphs_from_text(text: str) -> list[str]:
     """Read a plain-text transcript (e.g. one saved by a previous run)."""
     out = []
     for block in re.split(r"\n\s*\n", text):
-        block = re.sub(r"^\[\d{1,2}:\d{2}(:\d{2})?\]\s*", "", block.strip())
+        block = block.strip()
+        if re.fullmatch(r"=== .* ===", block):  # "=== Part 2: file.mp3 ===" separator
+            continue
+        block = re.sub(r"^\[\d{1,2}:\d{2}(:\d{2})?\]\s*", "", block)
         block = " ".join(block.split())
         if block:
             out.append(block)
