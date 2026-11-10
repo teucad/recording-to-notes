@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Voice to Notes</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M12 15a3.5 3.5 0 0 0 3.5-3.5v-6a3.5 3.5 0 0 0-7 0v6A3.5 3.5 0 0 0 12 15Zm6-3.5a1 1 0 1 1 2 0 8 8 0 0 1-7 7.94V22h-2v-2.56a8 8 0 0 1-7-7.94 1 1 0 1 1 2 0 6 6 0 0 0 12 0Z"/></svg>
+      <h1>Voice to Notes</h1>
+    </div>
+    <div class="chips" id="chips" aria-live="polite"></div>
+  </header>
+
+  <main class="layout">
+    <section class="col">
+      <form class="card" id="jobForm">
+        <h2>New lecture</h2>
+        <label class="drop" id="drop">
+          <input type="file" id="file" accept="audio/*,video/*,.txt,.mkv,.opus,.flac,.m4a">
+          <span class="drop-main" id="dropMain">Drop a lecture recording here, or click to choose</span>
+          <span class="drop-sub" id="dropSub">Audio or video — or a .txt transcript to skip transcription</span>
+        </label>
+
+        <label class="field">
+          <span>Chapter title <em>optional — the model proposes one if left empty</em></span>
+          <input type="text" id="title" maxlength="120" placeholder="e.g. Introduction to Thermodynamics">
+        </label>
+
+        <div class="grid2">
+          <label class="field">
+            <span>Spoken language</span>
+            <select id="language"></select>
+          </label>
+          <label class="field">
+            <span>Notes language</span>
+            <select id="outLanguage"></select>
+          </label>
+          <label class="field">
+            <span>Transcription model</span>
+            <select id="whisper"></select>
+          </label>
+          <label class="field">
+            <span>Writing model (Ollama)</span>
+            <select id="llm"></select>
+          </label>
+        </div>
+
+        <label class="check"><input type="checkbox" id="makePdf" checked> Also export a PDF</label>
+        <div class="actions">
+          <button type="submit" class="primary" id="startBtn" disabled>Transcribe &amp; compose</button>
+          <span class="hint" id="formHint"></span>
+        </div>
+      </form>
+
+      <div class="card">
+        <h2>Markdown → PDF</h2>
+        <p class="sub">Convert any Markdown file. It is copied to the output folder together with its PDF.</p>
+        <label class="drop small" id="mdDrop">
+          <input type="file" id="mdFile" accept=".md,.markdown">
+          <span class="drop-main" id="mdDropMain">Drop a .md file here, or click to choose</span>
+        </label>
+      </div>
+    </section>
+
+    <section class="col">
+      <div class="card" id="jobCard" hidden>
+        <div class="card-head">
+          <h2 id="jobName">Processing</h2>
+          <button type="button" class="ghost" id="cancelBtn">Cancel</button>
+        </div>
+        <ol class="stages" id="stages">
+          <li data-stage="transcribe"><span class="dot"></span>Transcribe</li>
+          <li data-stage="compose"><span class="dot"></span>Compose</li>
+          <li data-stage="pdf"><span class="dot"></span>PDF</li>
+        </ol>
+        <div class="bar"><div class="bar-fill" id="barFill"></div></div>
+        <div class="status-line"><span id="jobMsg"></span><span id="jobTime"></span></div>
+        <p class="error" id="jobError" hidden></p>
+        <details class="log"><summary>Log</summary><pre id="jobLog"></pre></details>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>Output folder</h2>
+          <button type="button" class="ghost" id="openFolder">Open in Explorer</button>
+        </div>
+        <p class="sub" id="outPath"></p>
+        <ul class="files" id="files"></ul>
+        <p class="empty" id="filesEmpty" hidden>Nothing here yet. Your Markdown and PDF files will appear in this list.</p>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="previewDlg">
+    <div class="dlg-head">
+      <strong id="previewTitle"></strong>
+      <button type="button" class="ghost" id="previewClose">Close</button>
+    </div>
+    <iframe id="previewFrame" title="Document preview"></iframe>
+  </dialog>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
