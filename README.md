@@ -45,7 +45,20 @@ its own folder in `output/`), or use **Convert to PDF** next to a session in the
 
 - Windows with an NVIDIA GPU and a current driver (falls back to CPU if CUDA is unavailable)
 - [uv](https://docs.astral.sh/uv/)
-- [Ollama](https://ollama.com) with at least one model pulled, e.g. `ollama pull qwen3:14b`
+- At least one [Ollama](https://ollama.com) model, e.g. `ollama pull qwen3:14b`. Ollama itself is
+  handled by the app (see below).
+
+## Ollama
+
+On start the app checks for Ollama and:
+
+- **starts it** (`ollama serve`, in the background) if it is installed but not running;
+- **downloads and installs it** if it is missing — the official Windows installer from ollama.com
+  (about 1.8 GB), run silently for the current user. Progress is shown in the header. Set
+  `OLLAMA_AUTO_INSTALL=0` to turn this off.
+
+The **↻** button next to *Writing model* reloads the list of installed models (and starts Ollama again
+if it has stopped) — use it after `ollama pull`.
 
 ## Setup
 
@@ -73,4 +86,5 @@ The app opens at <http://127.0.0.1:8765>. The first transcription downloads the 
 - Whisper is unloaded before composing so the language model gets the VRAM.
 - Choose **None — cleaned transcript only** as the writing model to skip the language model.
 - Environment variables: `PORT` (default 8765), `OLLAMA_URL` (default `http://127.0.0.1:11434`),
+  `OLLAMA_AUTO_INSTALL=0` to never download Ollama,
   `NO_BROWSER=1` to not open a browser tab on start.

@@ -28,8 +28,23 @@ async function api(url, opts) {
 function chip(cls, label, value) {
   return el('span', { className: `chip ${cls}` }, label + ' ', el('b', { textContent: value }));
 }
-async function loadSystem() {
-  system = await api('/api/system');
+const OLLAMA_BUSY = ['unknown', 'starting', 'downloading', 'installing'];
+let systemTimer = null;
+
+function ollamaChip() {
+  const st = system.ollama_status;
+  const n = system.llm_models.length;
+  if (system.ollama) return chip(n ? 'ok' : 'warn', 'Ollama', `${n} model${n === 1 ? '' : 's'}`);
+  if (st.state === 'downloading') {
+    return chip('warn', 'Ollama', st.progress == null ? 'downloading…' : `downloading ${Math.round(st.progress * 100)}%`);
+  }
+  if (st.state === 'installing') return chip('warn', 'Ollama', 'installing…');
+  if (st.state === 'starting' || st.state === 'unknown') return chip('warn', 'Ollama', 'starting…');
+  return chip('bad', 'Ollama', st.state === 'missing' ? 'not installed' : 'not running');
+}
+
+async function loadSystem(reload = false) {
+  system = await api(reload ? '/api/ollama/reload' : '/api/system', reload ? { method: 'POST' } : undefined);
   const chips = $('chips');
   chips.replaceChildren();
   if (system.gpu) {
@@ -37,17 +52,40 @@ async function loadSystem() {
     chips.append(chip(system.cuda ? 'ok' : 'warn', 'GPU', `${system.gpu.name.replace('NVIDIA ', '')} · ${gb} GB`));
   }
   chips.append(chip(system.cuda ? 'ok' : 'warn', 'Transcription', system.cuda ? 'CUDA' : 'CPU only'));
-  chips.append(chip(system.ollama ? (system.llm_models.length ? 'ok' : 'warn') : 'bad', 'Ollama',
-    system.ollama ? `${system.llm_models.length} model${system.llm_models.length === 1 ? '' : 's'}` : 'not running'));
+  chips.append(ollamaChip());
 
   const llm = $('llm');
   const previous = llm.value;
+  const hadModels = llm.options.length > 1;
   llm.replaceChildren(...system.llm_models.map((m) => option(m, m)), option('', 'None — cleaned transcript only'));
-  // keep the user's choice across refreshes; on first load default to the first installed model
-  if (llm.dataset.ready && [...llm.options].some((o) => o.value === previous)) llm.value = previous;
-  llm.dataset.ready = '1';
+  // keep the user's choice across refreshes; default to the first installed model once models appear
+  if (hadModels && [...llm.options].some((o) => o.value === previous)) llm.value = previous;
+
+  const st = system.ollama_status;
+  const settling = !system.ollama && OLLAMA_BUSY.includes(st.state);
+  const hint = $('llmHint');
+  if (system.ollama && !system.llm_models.length) {
+    hint.textContent = 'No Ollama models installed yet. Run "ollama pull <model>" in a terminal, then press ↻.';
+  } else if (!system.ollama && !settling) {
+    hint.textContent = st.message || 'Ollama is not running. Press ↻ to start it.';
+  } else {
+    hint.textContent = settling && st.message ? `${st.message}…` : '';
+  }
+  hint.hidden = !hint.textContent;
+  $('ollamaReload').classList.toggle('spin', settling);
   $('outPath').textContent = system.output_dir;
+
+  // poll quickly while Ollama is being downloaded / installed / started
+  clearTimeout(systemTimer);
+  systemTimer = setTimeout(() => loadSystem().catch(() => {}), settling ? 1500 : 15000);
 }
+$('ollamaReload').onclick = async () => {
+  const btn = $('ollamaReload');
+  btn.disabled = true;
+  btn.classList.add('spin');
+  try { await loadSystem(true); } catch {}
+  btn.disabled = false;
+};
 function initForm() {
   const langs = () => system.languages.map(([code, name]) => option(code, name));
   $('whisper').append(...system.whisper_models.map((m) => option(m, m === 'large-v3-turbo' ? `${m} (fast, recommended)` : m)));
@@ -282,5 +320,4 @@ async function convertMarkdown([file]) {
   renderQueue();
   loadFiles();
   if (system.active_job) watch(system.active_job);
-  setInterval(() => loadSystem().catch(() => {}), 15000);
 })();

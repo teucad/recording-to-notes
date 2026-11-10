@@ -12,12 +12,17 @@ from starlette.concurrency import run_in_threadpool
 
 from . import OUTPUT_DIR, STATIC_DIR, UPLOAD_DIR
 from . import compose as composer
-from . import jobs, pdf, transcribe
+from . import jobs, ollama, pdf, transcribe
 
 AUDIO_EXTS = {".mp3", ".wav", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma", ".webm", ".mp4", ".mkv", ".mov"}
 
 app = FastAPI(title="Voice to Notes")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+
+@app.on_event("startup")
+def _startup() -> None:
+    ollama.ensure_async()  # install Ollama if missing, start it if not running
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -46,6 +51,7 @@ def system() -> dict:
         "gpu": _gpu(),
         "cuda": transcribe.cuda_available(),
         "ollama": models is not None,
+        "ollama_status": ollama.status(),
         "llm_models": models or [],
         "whisper_models": transcribe.WHISPER_MODELS,
         "languages": sorted(composer.LANG_NAMES.items(), key=lambda kv: kv[1]),
@@ -53,6 +59,14 @@ def system() -> dict:
         "output_dir": str(OUTPUT_DIR),
         "active_job": active.id if active else None,
     }
+
+
+@app.post("/api/ollama/reload")
+def reload_ollama() -> dict:
+    """Re-read the installed models; (re)start Ollama first if it is not running."""
+    if not ollama.reachable():
+        ollama.ensure_async()
+    return system()
 
 
 async def _save_upload(file: UploadFile, dest: Path) -> None:

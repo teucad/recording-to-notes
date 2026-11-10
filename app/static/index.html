@@ -52,11 +52,15 @@
             <span>Transcription model</span>
             <select id="whisper"></select>
           </label>
-          <label class="field">
-            <span>Writing model (Ollama)</span>
-            <select id="llm"></select>
-          </label>
+          <div class="field">
+            <label for="llm">Writing model (Ollama)</label>
+            <div class="with-btn">
+              <select id="llm"></select>
+              <button type="button" class="ghost icon" id="ollamaReload" title="Reload Ollama models" aria-label="Reload Ollama models">↻</button>
+            </div>
+          </div>
         </div>
+        <p class="hint" id="llmHint" hidden></p>
 
         <label class="check"><input type="checkbox" id="makePdf" checked> Also export a PDF</label>
         <div class="actions">

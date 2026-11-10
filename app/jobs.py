@@ -15,7 +15,7 @@ from pathlib import Path
 
 from . import OUTPUT_DIR
 from . import compose as composer
-from . import pdf, transcribe
+from . import ollama, pdf, transcribe
 
 # share of the overall progress bar per stage
 WEIGHTS = {"transcribe": (0.0, 0.45), "compose": (0.45, 0.47), "pdf": (0.92, 0.08)}
@@ -180,7 +180,10 @@ def _run(job: Job) -> None:
         fallback_title = Path(job.source_names[0]).stem.replace("_", " ").strip() or "Lecture"
         source_label = ", ".join(job.source_names)
         if job.llm_model:
-            job.set_stage("compose", "Composing textbook chapter")
+            job.set_stage("compose", "Checking Ollama")
+            if not ollama.ensure():
+                raise composer.ComposeError(ollama.status()["message"] or "Ollama is not available.")
+            job.add_log("Composing textbook chapter")
             markdown = composer.compose(
                 paragraphs, job.llm_model, job.title, fallback_title, source_label,
                 job.out_language or detected, job.stage_progress, job.cancelled, job.add_log,

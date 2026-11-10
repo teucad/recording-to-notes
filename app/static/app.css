@@ -65,6 +65,13 @@ button.link:hover { color: var(--accent); }
 @media (max-width: 480px) { .grid2 { grid-template-columns: 1fr; } }
 input[type=text], select { width: 100%; padding: 8px 10px; font: inherit; font-weight: 400; color: var(--ink); background: var(--field); border: 1px solid var(--line); border-radius: 8px; }
 input[type=text]:focus, select:focus, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.with-btn { display: flex; gap: 6px; }
+.with-btn select { min-width: 0; }
+button.icon { flex: none; width: 36px; padding: 0; font-size: 1.05rem; line-height: 1; }
+button.icon.spin { animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { button.icon.spin { animation: none; opacity: .5; } }
+#llmHint { margin: -4px 0 0; }
 .check { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; }
 .check input { accent-color: var(--accent); width: 16px; height: 16px; }
 
