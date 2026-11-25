@@ -55,7 +55,10 @@ function initForm() {
     option('', 'Auto-detect (per recording)'),
     option('multi', 'Multilingual — languages mixed within a recording'),
     ...langs());
-  $('outLanguage').append(option('', 'Main language of the lecture'), ...langs());
+  $('outLanguage').append(
+    option('', 'Main language of the lecture'),
+    option('multi', 'Multilingual — keep each passage in the language spoken'),
+    ...langs());
 }
 
 // ---------- drop zones ----------

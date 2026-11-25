@@ -184,6 +184,7 @@ def _run(job: Job) -> None:
             markdown = composer.compose(
                 paragraphs, job.llm_model, job.title, fallback_title, source_label,
                 job.out_language or detected, job.stage_progress, job.cancelled, job.add_log,
+                main_language=detected,
             )
         else:
             job.set_stage("compose", "Formatting transcript (no language model selected)")
