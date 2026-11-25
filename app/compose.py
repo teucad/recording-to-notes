@@ -35,7 +35,7 @@ SYSTEM = """You are an expert academic editor. You turn the raw transcript of a 
 into a chapter of a well-written textbook.
 
 Rules:
-- Write the entire chapter in {lang}. The lecture may switch between languages; translate every passage that is in another language into {lang}. Where the lecturer uses an established technical term in another language, you may keep that original term in parentheses after its first use.
+{lang_rule}
 - Keep every substantive idea, definition, argument, example, number and formula from the transcript. \
 Do not summarise away detail, and do not invent facts that the lecturer did not say.
 - Rewrite spoken language as clear, formal, flowing textbook prose. Remove filler words, repetitions, \
@@ -91,6 +91,20 @@ TITLE: <a concise, descriptive chapter title>
 
 ## Review Questions
 <numbered list of 4 to 6 questions that test understanding>"""
+
+
+MULTILINGUAL = "multi"
+
+LANG_RULE_SINGLE = (
+    "- Write the entire chapter in {lang}. The lecture may switch between languages; translate every passage "
+    "that is in another language into {lang}. Where the lecturer uses an established technical term in another "
+    "language, you may keep that original term in parentheses after its first use."
+)
+LANG_RULE_MULTI = (
+    "- The lecture is multilingual. Write each passage in the language the lecturer spoke it in; do not "
+    "translate between languages. Keep a sentence or paragraph in one language, and switch language only where "
+    "the lecturer did. Headings and block-quote labels follow the language of the text beneath them."
+)
 
 
 class ComposeError(RuntimeError):
@@ -222,14 +236,22 @@ def compose(
     on_progress: Callable[[float, str], None],
     should_cancel: Callable[[], bool],
     log: Callable[[str], None],
+    main_language: str = "",
 ) -> str:
-    lang = LANG_NAMES.get(language, language) if language else "the same language as the transcript"
-    system = SYSTEM.format(lang=lang)
+    if language == MULTILINGUAL:
+        # keep each passage in its spoken language; the front/back matter uses the main language
+        lang = LANG_NAMES.get(main_language, main_language) or "the main language of the transcript"
+        system = SYSTEM.format(lang=lang, lang_rule=LANG_RULE_MULTI)
+        log_lang = f"multilingual (overview and glossary in {lang})"
+    else:
+        lang = LANG_NAMES.get(language, language) if language else "the same language as the transcript"
+        system = SYSTEM.format(lang=lang, lang_rule=LANG_RULE_SINGLE.format(lang=lang))
+        log_lang = lang
     chunks = _chunks(paragraphs)
     n = len(chunks)
     if n == 0:
         raise ComposeError("The transcript is empty — no speech was detected.")
-    log(f"Composing with {model}: {n} part(s), output language: {lang}.")
+    log(f"Composing with {model}: {n} part(s), output language: {log_lang}.")
 
     body_parts: list[str] = []
     for i, chunk in enumerate(chunks, 1):
